@@ -20,7 +20,13 @@
 
 ### Recent Changes
 
-#### Project Setup Improvements (Latest)
+#### Live Data Integration (Latest)
+- Added TradingView WebSocket service for real-time data
+- Implemented live ticker updates for crypto and stock assets
+- Created custom hook for managing live market data
+- Integrated live prices and changes in Market view
+
+#### Project Setup Improvements
 - Added comprehensive .gitignore file
 - Configured ignore patterns for:
   - Dependencies and build artifacts
@@ -28,7 +34,7 @@
   - Editor-specific files
   - System files and logs
 
-#### Market View Improvements (Latest)
+#### Market View Improvements
 - Added interactive trading chart with TradingView widget
 - Made asset cards clickable to update chart symbol
 - Added support for both crypto and stock symbols

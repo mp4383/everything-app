@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Box, Typography, Stack, Card, CardContent, IconButton, Grid } from '@mui/material';
 import { TrendingUp, TrendingDown } from '@mui/icons-material';
 import TradingViewWidget from '../components/TradingViewWidget';
 import { mockCryptoData, mockStockData } from '../mockData';
+import { useLiveTickers } from '../hooks/useLiveTickers';
 
 const AssetCard = ({ symbol, name, price, change24h, marketCap, onClick, exchange = "BINANCE" }) => (
   <Card 
@@ -47,7 +49,29 @@ const AssetCard = ({ symbol, name, price, change24h, marketCap, onClick, exchang
 );
 
 const MarketPage = () => {
-  const [selectedSymbol, setSelectedSymbol] = useState("BINANCE:BTCUSDT");
+  const location = useLocation();
+  const [selectedSymbol, setSelectedSymbol] = useState(location.state?.symbol || "BINANCE:BTCUSDT");
+
+  useEffect(() => {
+    if (location.state?.symbol) {
+      setSelectedSymbol(location.state.symbol);
+    }
+  }, [location.state?.symbol]);
+  const symbols = [
+    ...mockCryptoData.map(asset => `BINANCE:${asset.symbol}USDT`),
+    ...mockStockData.map(asset => `NASDAQ-${asset.symbol}`)
+  ];
+  const { data: liveData, isLoading } = useLiveTickers(symbols);
+
+  const getUpdatedAssetData = (asset, exchange) => {
+    const symbol = exchange === 'BINANCE' ? `BINANCE:${asset.symbol}USDT` : `NASDAQ-${asset.symbol}`;
+    const data = liveData[symbol] || {};
+    return {
+      ...asset,
+      price: isLoading ? asset.price : (data.price || asset.price),
+      change24h: isLoading ? asset.change24h : (data.change24h || asset.change24h)
+    };
+  };
 
   const handleSymbolSelect = (symbol) => {
     setSelectedSymbol(symbol);
@@ -74,7 +98,7 @@ const MarketPage = () => {
             {mockCryptoData.map((asset) => (
               <AssetCard 
                 key={asset.symbol} 
-                {...asset} 
+                {...getUpdatedAssetData(asset, 'BINANCE')}
                 onClick={handleSymbolSelect}
                 exchange="BINANCE"
               />
@@ -86,7 +110,7 @@ const MarketPage = () => {
             {mockStockData.map((asset) => (
               <AssetCard 
                 key={asset.symbol} 
-                {...asset} 
+                {...getUpdatedAssetData(asset, 'NASDAQ')}
                 onClick={handleSymbolSelect}
                 exchange="NASDAQ"
               />

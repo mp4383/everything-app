@@ -1,9 +1,20 @@
 import { Typography, Card, CardContent, Grid, Stack, Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown } from '@mui/icons-material';
 import { mockCryptoData, mockStockData } from '../mockData';
+import { useLiveTickers } from '../hooks/useLiveTickers';
 
-const AssetCard = ({ symbol, name, price, change24h, marketCap }) => (
-  <Card variant="outlined">
+const AssetCard = ({ symbol, name, price, change24h, marketCap, onClick }) => (
+  <Card 
+    variant="outlined"
+    sx={{ 
+      cursor: 'pointer',
+      '&:hover': {
+        bgcolor: 'rgba(0, 0, 0, 0.02)'
+      }
+    }}
+    onClick={onClick}
+  >
     <CardContent>
       <Stack spacing={1}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -35,6 +46,27 @@ const AssetCard = ({ symbol, name, price, change24h, marketCap }) => (
 );
 
 const MarketOverview = () => {
+  const navigate = useNavigate();
+  const symbols = [
+    ...mockCryptoData.map(asset => `BINANCE:${asset.symbol}USDT`),
+    ...mockStockData.map(asset => `NASDAQ-${asset.symbol}`)
+  ];
+  const { data: liveData, isLoading } = useLiveTickers(symbols);
+
+  const getUpdatedAssetData = (asset, exchange) => {
+    const symbol = exchange === 'BINANCE' ? `BINANCE:${asset.symbol}USDT` : `NASDAQ-${asset.symbol}`;
+    const data = liveData[symbol] || {};
+    
+    // Format price to match mock data format
+    const formattedPrice = data.price ? parseFloat(data.price).toFixed(2) : asset.price;
+    
+    return {
+      ...asset,
+      price: isLoading ? asset.price : formattedPrice,
+      change24h: isLoading ? asset.change24h : (data.change24h || asset.change24h)
+    };
+  };
+
   return (
     <Stack spacing={2} sx={{ height: '100%' }}>
       <Typography 
@@ -62,7 +94,10 @@ const MarketOverview = () => {
             <Grid container spacing={2}>
               {mockCryptoData.map((asset) => (
                 <Grid item xs={6} key={asset.symbol}>
-                  <AssetCard {...asset} />
+                  <AssetCard 
+                    {...getUpdatedAssetData(asset, 'BINANCE')} 
+                    onClick={() => navigate(`/market`, { state: { symbol: `BINANCE:${asset.symbol}USDT` } })}
+                  />
                 </Grid>
               ))}
             </Grid>
@@ -73,7 +108,10 @@ const MarketOverview = () => {
             <Grid container spacing={2}>
               {mockStockData.map((asset) => (
                 <Grid item xs={6} key={asset.symbol}>
-                  <AssetCard {...asset} />
+                  <AssetCard 
+                    {...getUpdatedAssetData(asset, 'NASDAQ')} 
+                    onClick={() => navigate(`/market`, { state: { symbol: `NASDAQ-${asset.symbol}` } })}
+                  />
                 </Grid>
               ))}
             </Grid>

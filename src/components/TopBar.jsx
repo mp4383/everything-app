@@ -1,8 +1,38 @@
 import { AppBar, Box, Typography, Stack, IconButton } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { mockTickers } from '../mockData';
+import { useLiveTickers } from '../hooks/useLiveTickers';
+import { useState, useEffect } from 'react';
 
 const TopBar = ({ onMenuClick }) => {
+  const navigate = useNavigate();
+  const [time, setTime] = useState(new Date());
+  const symbols = ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT', 'BINANCE:SOLUSDT', 'NASDAQ-AAPL', 'NASDAQ-MSFT'];
+  const { data: liveData, isLoading } = useLiveTickers(symbols);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getTicker = (symbol) => {
+    const baseSymbol = symbol.split(':')[1]?.split('USDT')[0] || 
+                      symbol.split('-')[1] || 
+                      symbol;
+    const mockData = mockTickers.find(t => t.symbol === baseSymbol) || {};
+    const data = liveData[symbol] || {};
+    
+    // Use mock data while loading or as fallback
+    const price = isLoading ? mockData.price : (data.price?.toLocaleString() || mockData.price);
+    const change = isLoading ? mockData.change : (data.change24h ? `${data.change24h > 0 ? '+' : ''}${data.change24h.toFixed(2)}%` : mockData.change);
+    return {
+      symbol: baseSymbol,
+      price,
+      change
+    };
+  };
+
   return (
     <AppBar 
       position="fixed" 
@@ -39,26 +69,41 @@ const TopBar = ({ onMenuClick }) => {
             <MenuIcon />
           </IconButton>
           <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', overflow: 'hidden' }}>
-          {mockTickers.map((ticker) => (
-            <Stack key={ticker.symbol} direction="row" spacing={1} alignItems="center">
-              <Typography variant="body2" fontWeight="bold">
-                {ticker.symbol}
-              </Typography>
-              <Typography variant="body2">
-                {ticker.price}
-              </Typography>
-              <Typography
-                variant="body2"
-                color={ticker.change.startsWith('+') ? 'success.main' : 'error.main'}
-              >
-                {ticker.change}
-              </Typography>
-            </Stack>
-          ))}
+            {symbols.map((symbol) => {
+              const ticker = getTicker(symbol);
+              return (
+                <Stack 
+                  key={symbol} 
+                  direction="row" 
+                  spacing={1} 
+                  alignItems="center"
+                  sx={{ 
+                    cursor: 'pointer',
+                    '&:hover': {
+                      opacity: 0.8
+                    }
+                  }}
+                  onClick={() => navigate('/market', { state: { symbol } })}
+                >
+                  <Typography variant="body2" fontWeight="bold">
+                    {ticker.symbol}
+                  </Typography>
+                  <Typography variant="body2">
+                    ${ticker.price}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color={ticker.change.startsWith('+') ? 'success.main' : 'error.main'}
+                  >
+                    {ticker.change}
+                  </Typography>
+                </Stack>
+              );
+            })}
           </Box>
         </Box>
         <Typography variant="body2" sx={{ ml: 2 }}>
-          {new Date().toLocaleTimeString()}
+          {time.toLocaleTimeString()}
         </Typography>
       </Stack>
     </AppBar>
