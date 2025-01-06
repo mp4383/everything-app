@@ -30,6 +30,14 @@
 
 ### Recent Changes
 
+#### Profile Features (Latest)
+- Added profile button to TopBar:
+  - Displays user's avatar from profile
+  - Shows nickname initials as fallback
+  - Added dropdown menu with Profile, Settings, and Logout options
+  - Positioned to the right of the clock
+  - Styled with subtle border and hover effect
+
 #### Social Feed Improvements (Latest)
 - Added nicknames to social posts
 - Updated post layout:

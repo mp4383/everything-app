@@ -7,10 +7,7 @@ export const useLiveTickers = (symbols) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('useLiveTickers: Initializing with symbols:', symbols);
-
     const handleTickerUpdate = (data) => {
-      console.log('useLiveTickers: Received update:', data);
       setIsLoading(false);
       setTickerData(prev => ({
         ...prev,
@@ -22,7 +19,6 @@ export const useLiveTickers = (symbols) => {
     };
 
     const handleError = (err) => {
-      console.error('useLiveTickers: Error:', err);
       setError(err);
     };
 

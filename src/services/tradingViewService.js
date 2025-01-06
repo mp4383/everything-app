@@ -39,7 +39,6 @@ class TradingViewService {
               }
 
               const data = JSON.parse(msg);
-              console.log('Received message:', data);
 
               // Handle different message types
               switch (data.m) {
@@ -62,19 +61,17 @@ class TradingViewService {
                   break;
               }
             } catch (e) {
-              console.log('Error parsing message:', e, msg);
+              // Silently handle errors
             }
           }
         });
       };
 
       this.socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
         reject(error);
       };
 
       this.socket.onclose = () => {
-        console.log('WebSocket closed');
         this.connected = false;
         this.connectionPromise = null;
         this.session = null;
@@ -92,14 +89,11 @@ class TradingViewService {
 
   async subscribeTicker(symbol, callback) {
     await this.connect();
-
-    console.log('Subscribing to:', symbol);
     this.messageHandlers.set(symbol, callback);
     this.sendMessage('quote_add_symbols', [this.session, symbol]);
     this.sendMessage('quote_fast_symbols', [this.session, symbol]);
 
     return () => {
-      console.log('Unsubscribing from:', symbol);
       this.messageHandlers.delete(symbol);
       this.sendMessage('quote_remove_symbols', [this.session, symbol]);
     };
@@ -107,8 +101,6 @@ class TradingViewService {
 
   async subscribeMultipleTickers(symbols, callback) {
     await this.connect();
-
-    console.log('Subscribing to multiple symbols:', symbols);
     
     // Subscribe to all symbols at once
     this.sendMessage('quote_add_symbols', [this.session, ...symbols]);
@@ -122,7 +114,6 @@ class TradingViewService {
     });
 
     return () => {
-      console.log('Unsubscribing from multiple symbols');
       symbols.forEach(symbol => {
         this.messageHandlers.delete(symbol);
       });
@@ -132,7 +123,6 @@ class TradingViewService {
 
   disconnect() {
     if (this.socket) {
-      console.log('Disconnecting WebSocket');
       this.socket.close();
     }
   }

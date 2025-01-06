@@ -20,27 +20,14 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     headers: null,
   });
 
-  // Debug logs
-  useEffect(() => {
-    console.log('Auth state changed:', {
-      isAuthenticated: authState.isAuthenticated,
-      walletAddress: authState.walletAddress,
-      hasProfile: !!authState.profile,
-      hasHeaders: !!authState.headers,
-    });
-  }, [authState]);
-
   // Attempt to restore session
   useEffect(() => {
-    console.log('Attempting to restore session...');
     const storedAuth = localStorage.getItem('auth');
     if (storedAuth) {
       try {
         const parsed = JSON.parse(storedAuth);
-        console.log('Found stored auth:', parsed);
         setAuthState(parsed);
       } catch (error) {
-        console.error('Failed to parse stored auth:', error);
         localStorage.removeItem('auth');
       }
     }
@@ -49,10 +36,8 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Save auth state changes
   useEffect(() => {
     if (authState.isAuthenticated && authState.headers) {
-      console.log('Saving auth state to localStorage');
       localStorage.setItem('auth', JSON.stringify(authState));
     } else {
-      console.log('Removing auth state from localStorage');
       localStorage.removeItem('auth');
     }
   }, [authState]);
@@ -60,34 +45,28 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Handle wallet disconnection
   useEffect(() => {
     if (!connected && authState.isAuthenticated) {
-      console.log('Wallet disconnected, logging out');
       logout();
     }
   }, [connected]);
 
   const login = useCallback(async () => {
     try {
-      console.log('Starting login process...');
       if (!publicKey) {
         throw new Error('Wallet not connected');
       }
 
       const { headers, walletAddress } = await auth.connect();
-      console.log('Got auth headers:', headers);
       
       // Try to get existing profile
       try {
-        console.log('Fetching profile...');
         const profileResponse = await api.getProfile(headers);
-        console.log('Profile found:', profileResponse.data);
         setAuthState({
           isAuthenticated: true,
           walletAddress,
-          profile: profileResponse.data,
+          profile: profileResponse.data.data,
           headers,
         });
       } catch (error) {
-        console.log('No profile found, setting authenticated without profile');
         // No profile yet, but still authenticated
         setAuthState({
           isAuthenticated: true,
@@ -97,14 +76,12 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
       }
     } catch (error) {
-      console.error('Login error:', error);
       throw error;
     }
   }, [publicKey]);
 
   const logout = useCallback(async () => {
     try {
-      console.log('Starting logout process...');
       await auth.disconnect();
       await disconnect();
       setAuthState({
@@ -114,7 +91,6 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         headers: null,
       });
     } catch (error) {
-      console.error('Logout error:', error);
       throw error;
     }
   }, [disconnect]);
@@ -125,15 +101,12 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
-      console.log('Creating profile:', data);
       const response = await api.createProfile(data, authState.headers);
-      console.log('Profile created:', response.data);
       setAuthState(prev => ({
         ...prev,
-        profile: response.data,
+        profile: response.data.data,
       }));
     } catch (error) {
-      console.error('Create profile error:', error);
       throw error;
     }
   }, [authState.headers]);

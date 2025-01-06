@@ -1,21 +1,41 @@
-import { AppBar, Box, Typography, Stack, IconButton } from '@mui/material';
+import { AppBar, Box, Typography, Stack, IconButton, Avatar, Menu, MenuItem } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Menu as MenuIcon } from '@mui/icons-material';
-import { mockTickers } from '../mockData';
 import { useLiveTickers } from '../hooks/useLiveTickers';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useAuth } from '../contexts/AuthContext';
 
 const TopBar = ({ onMenuClick }) => {
   const navigate = useNavigate();
+  const { profile, logout } = useAuth();
   const [time, setTime] = useState(new Date());
+  const [anchorEl, setAnchorEl] = useState(null);
   const symbols = ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT', 'BINANCE:SOLUSDT', 'NASDAQ:AAPL', 'NASDAQ:MSFT'];
   const { data: liveData, isLoading } = useLiveTickers(symbols);
+
+  // Debug profile data
+  useEffect(() => {
+    console.log('Profile data:', profile);
+  }, [profile]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const handleProfileClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    handleProfileClose();
+    await logout();
+  };
 
   const getTicker = (symbol) => {
     // Extract base symbol (e.g., BTC from BINANCE:BTCUSDT or AAPL from NASDAQ:AAPL)
@@ -105,6 +125,50 @@ const TopBar = ({ onMenuClick }) => {
           <Typography variant="body2">
             {time.toLocaleTimeString()}
           </Typography>
+          <IconButton 
+            size="small" 
+            onClick={handleProfileClick}
+            sx={{ 
+              padding: 0,
+              '&:hover': { opacity: 0.8 }
+            }}
+          >
+            <Avatar 
+              src={profile?.avatarUrl}
+              alt={profile?.nickname}
+              sx={{ 
+                width: 32, 
+                height: 32,
+                border: 1,
+                borderColor: 'divider'
+              }}
+            >
+              {profile?.nickname?.slice(0, 2).toUpperCase()}
+            </Avatar>
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleProfileClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem onClick={() => { handleProfileClose(); navigate('/profile'); }}>
+              Profile
+            </MenuItem>
+            <MenuItem onClick={() => { handleProfileClose(); navigate('/settings'); }}>
+              Settings
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              Logout
+            </MenuItem>
+          </Menu>
         </Stack>
       </Stack>
     </AppBar>
