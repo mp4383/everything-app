@@ -1,45 +1,33 @@
-import { z } from 'zod';
+import { Request, Response, NextFunction } from 'express';
+import { handleResponse } from '../utils/response';
 
-export const createPostSchema = z.object({
-  content: z.string().min(1).max(1000),
-  symbols: z.array(z.string()).optional().default([]),
-  mentions: z.array(z.string()).optional().default([]),
-  tradeShare: z.object({
-    symbol: z.string(),
-    type: z.enum(['buy', 'sell']),
-    amount: z.number().positive(),
-    price: z.number().positive(),
-    platform: z.string(),
-    proofUrl: z.string().url().optional(),
-  }).optional(),
-}).strict();
+export const validateProfile = (req: Request, res: Response, next: NextFunction) => {
+  const { nickname, bio } = req.body;
 
-export const createCommentSchema = z.object({
-  content: z.string().min(1).max(500),
-  parentId: z.string().optional(),
-}).strict();
+  const errors = [];
 
-export const paginationSchema = z.object({
-  page: z.string().optional().transform(val => parseInt(val || '1')),
-  limit: z.string().optional().transform(val => Math.min(parseInt(val || '20'), 100)),
-}).strict();
+  if (!nickname || typeof nickname !== 'string' || nickname.trim().length < 3) {
+    errors.push({
+      field: 'nickname',
+      message: 'Nickname must be at least 3 characters long',
+    });
+  }
 
-export const postIdParamSchema = z.object({
-  id: z.string().uuid(),
-}).strict().transform(data => ({
-  id: data.id as string // Assert id is string after validation
-}));
+  if (!bio || typeof bio !== 'string' || bio.trim().length < 3) {
+    errors.push({
+      field: 'bio',
+      message: 'Bio must be at least 3 characters long',
+    });
+  }
 
-export const postFiltersSchema = z.object({
-  symbols: z.array(z.string()).optional(),
-  authorId: z.string().optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-}).strict();
+  if (errors.length > 0) {
+    return handleResponse(res, 400, { errors });
+  }
 
-// Combined query schema for posts endpoint
-export const postsQuerySchema = paginationSchema.merge(postFiltersSchema);
+  // Clean the data
+  req.body.nickname = nickname.trim();
+  req.body.bio = bio.trim();
+  req.body.avatarUrl = req.body.avatarUrl || null;
 
-export type CreatePostInput = z.infer<typeof createPostSchema>;
-export type CreateCommentInput = z.infer<typeof createCommentSchema>;
-export type PostFilters = z.infer<typeof postFiltersSchema>;
+  next();
+};

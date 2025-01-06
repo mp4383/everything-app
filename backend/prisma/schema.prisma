@@ -1,4 +1,5 @@
-// This is your Prisma schema file
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -9,194 +10,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User Profile
-model UserProfile {
-  id            String    @id @default(uuid())
-  walletAddress String    @unique
+model User {
+  id           String   @id @default(cuid())
+  walletAddress String  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  profile      Profile?
+}
+
+model Profile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
   nickname      String
+  bio           String
   avatarUrl     String?
-  bio           String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Social stats
-  followerCount     Int       @default(0)
-  followingCount    Int       @default(0)
-  postCount         Int       @default(0)
-
-  // Relations
-  settings      UserSettings?
-  userPosts     Post[]
-  comments      Comment[]
-  interactions  Interaction[]
-  followingUsers     Follow[]        @relation("Following")
-  followerUsers      Follow[]        @relation("Followers")
-  events        CalendarEvent[]
-  tradeShares   TradeShare[]
-
-  @@index([walletAddress])
-}
-
-// User Settings
-model UserSettings {
-  id            String    @id @default(uuid())
-  userId        String    @unique
-  user          UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  theme         String    @default("light")
-  updatedAt     DateTime  @updatedAt
-
-  // Notification preferences
-  emailNotifications     Boolean @default(true)
-  pushNotifications      Boolean @default(true)
-  priceAlerts           Boolean @default(true)
-  socialInteractions    Boolean @default(true)
-  mentions             Boolean @default(true)
-
-  // Watchlist
-  cryptoWatchlist      String[] @default([])
-  stockWatchlist       String[] @default([])
-
-  // Default views
-  defaultMarketView    String   @default("crypto")
-  defaultTimeframe     String   @default("1D")
-
-  // Privacy settings
-  showWatchlist       Boolean @default(true)
-  showPortfolio       Boolean @default(true)
-  showActivity        Boolean @default(true)
-
-  @@index([userId])
-}
-
-// Social Posts
-model Post {
-  id            String    @id @default(uuid())
-  authorId      String
-  author        UserProfile @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  content       String
-  attachments   Json?     // Array of attachment objects
-  mentions      String[]  // Array of mentioned wallet addresses
-  symbols       String[]  // Referenced market symbols
-  isEdited      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Metrics
-  likes         Int       @default(0)
-  comments      Int       @default(0)
-  shares        Int       @default(0)
-
-  // Relations
-  commentList   Comment[]
-  interactions  Interaction[]
-  tradeShare    TradeShare?
-
-  @@index([authorId])
-  @@index([createdAt])
-}
-
-// Comments
-model Comment {
-  id            String    @id @default(uuid())
-  postId        String
-  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId      String
-  author        UserProfile @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  content       String
-  parentId      String?   // For nested comments
-  parent        Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies       Comment[] @relation("CommentReplies")
-  mentions      String[]
-  isEdited      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Metrics
-  likes         Int       @default(0)
-  replyCount    Int       @default(0)
-
-  // Relations
-  interactions  Interaction[]
-
-  @@index([postId])
-  @@index([authorId])
-  @@index([parentId])
-}
-
-// Social Interactions
-model Interaction {
-  id            String    @id @default(uuid())
-  type          String    // 'like', 'share', 'bookmark'
-  userId        String
-  user          UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  targetType    String    // 'post' or 'comment'
-  postId        String?
-  commentId     String?
-  post          Post?     @relation(fields: [postId], references: [id])
-  comment       Comment?  @relation(fields: [commentId], references: [id])
-  createdAt     DateTime  @default(now())
-
-  @@unique([userId, postId, targetType], name: "userPostInteraction", map: "user_post_interaction")
-  @@unique([userId, commentId, targetType], name: "userCommentInteraction", map: "user_comment_interaction")
-  @@index([userId])
-  @@index([postId])
-  @@index([commentId])
-}
-
-// Follow Relationships
-model Follow {
-  id              String    @id @default(uuid())
-  followerId      String
-  follower        UserProfile @relation("Following", fields: [followerId], references: [id])
-  followingId     String
-  following       UserProfile @relation("Followers", fields: [followingId], references: [id])
-  createdAt       DateTime  @default(now())
-
-  @@unique([followerId, followingId])
-  @@index([followerId])
-  @@index([followingId])
-}
-
-// Trade Shares
-model TradeShare {
-  id            String    @id @default(uuid())
-  postId        String    @unique
-  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId      String
-  author        UserProfile @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  symbol        String
-  type          String    // 'buy' or 'sell'
-  amount        Float
-  price         Float
-  platform      String
-  verified      Boolean   @default(false)
-  proofUrl      String?
-  createdAt     DateTime  @default(now())
-
-  @@index([authorId])
-  @@index([symbol])
-}
-
-// Calendar Events
-model CalendarEvent {
-  id            String    @id @default(uuid())
-  title         String
-  description   String?
-  type          String    // 'crypto', 'stocks', 'personal'
-  category      String    // 'earnings', 'ico', 'conference', etc.
-  startDate     DateTime
-  endDate       DateTime?
-  allDay        Boolean   @default(false)
-  location      String?
-  url           String?
-  symbols       String[]
-  visibility    String    @default("public") // 'public', 'private', 'followers'
-  attendees     String[]  // Array of wallet addresses
-  createdById   String
-  createdBy     UserProfile @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@index([createdById])
-  @@index([startDate])
+  postCount     Int      @default(0)
+  followerCount Int      @default(0)
+  followingCount Int     @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
 }

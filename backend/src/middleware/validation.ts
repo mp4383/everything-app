@@ -1,47 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
-import { z, ZodError } from 'zod';
-import { AppError } from '../types';
+import { z } from 'zod';
 
-export const validateRequest = (schema: z.ZodType<any, any>) => {
-  return async (req: Request, _res: Response, next: NextFunction) => {
-    try {
-      const validatedData = await schema.parseAsync({
-        body: req.body,
-        query: req.query,
-        params: req.params,
+const profileSchema = z.object({
+  nickname: z.string().min(3).max(30),
+  bio: z.string().min(1).max(500),
+  avatarUrl: z.string().url().optional(),
+});
+
+export const validateProfile = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = profileSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Invalid profile data',
+        details: result.error.issues,
       });
-
-      // Replace request data with validated data
-      req['body'] = validatedData['body'];
-      req['query'] = validatedData['query'];
-      req['params'] = validatedData['params'];
-
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        next(
-          new AppError(400, 'Validation error', {
-            errors: error.errors.map((e) => ({
-              path: e.path.join('.'),
-              message: e.message,
-            })),
-          })
-        );
-      } else {
-        next(error);
-      }
     }
-  };
-};
-
-export const createValidationSchema = (
-  body?: z.ZodType<any, any>,
-  query?: z.ZodType<any, any>,
-  params?: z.ZodType<any, any>
-) => {
-  return z.object({
-    body: body || z.object({}),
-    query: query || z.object({}),
-    params: params || z.object({}),
-  });
+    next();
+  } catch (error) {
+    console.error('Profile validation error:', error);
+    res.status(400).json({ error: 'Invalid profile data' });
+  }
 };

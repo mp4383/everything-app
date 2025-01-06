@@ -1,66 +1,55 @@
-import { Response, NextFunction } from 'express';
-import { AuthenticatedRequest, AppError } from '../types';
-import { verifySignature, validateNonce } from '../utils/auth';
-import prisma from '../services/prisma';
+import { Request, Response, NextFunction } from 'express';
+import { verifyToken } from '../utils/jwt';
+import { prisma } from '../services/prisma';
 
-export const authenticate = async (
-  req: AuthenticatedRequest,
-  _res: Response,
-  next: NextFunction
-) => {
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+      };
+    }
+  }
+}
+
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const walletAddress = req.headers['x-wallet-address'];
-    const signature = req.headers['x-signature'];
-    const message = req.headers['x-message'];
-
-    if (!walletAddress || !signature || !message || 
-        typeof walletAddress !== 'string' || 
-        typeof signature !== 'string' || 
-        typeof message !== 'string') {
-      throw new AppError(401, 'Missing authentication headers');
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'No authorization header' });
     }
 
-    // Decode base64 message
-    const decodedMessage = Buffer.from(message, 'base64').toString();
-
-    // Validate the nonce in the message
-    if (!validateNonce(walletAddress, decodedMessage)) {
-      throw new AppError(401, 'Invalid or expired nonce');
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
     }
 
-    // Verify the signature
-    if (!verifySignature(decodedMessage, signature, walletAddress)) {
-      throw new AppError(401, 'Invalid signature');
-    }
-
-    // Find user profile if it exists
-    const profile = await prisma.userProfile.findUnique({
-      where: { walletAddress }
-    });
-
-    req.user = {
-      walletAddress,
-      profileId: profile?.id
-    };
-
+    const decoded = verifyToken(token);
+    req.user = { id: decoded.userId };
     next();
   } catch (error) {
-    if (error instanceof AppError) {
-      next(error);
-    } else {
-      next(new AppError(401, 'Authentication failed'));
-    }
+    console.error('Auth middleware error:', error);
+    res.status(401).json({ error: 'Invalid token' });
   }
 };
 
-export const requireProfile = async (
-  req: AuthenticatedRequest,
-  _res: Response,
-  next: NextFunction
-) => {
-  if (!req.user?.profileId) {
-    next(new AppError(403, 'Profile required for this action'));
-    return;
+export const requireProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { userId: req.user.id },
+    });
+
+    if (!profile) {
+      return res.status(403).json({ error: 'Profile required' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Profile check error:', error);
+    res.status(500).json({ error: 'Failed to check profile' });
   }
-  next();
 };
