@@ -19,7 +19,7 @@ const getAuthHeaders = async (message: string, signature: string, walletAddress:
   return {
     'x-wallet-address': walletAddress,
     'x-signature': signature,
-    'x-message': Buffer.from(message).toString('base64'),
+    'x-message': btoa(message),
   };
 };
 
@@ -101,7 +101,7 @@ export const auth = {
       console.log('Signing message...');
       const encodedMessage = new TextEncoder().encode(message);
       const signedMessage = await provider.signMessage(encodedMessage, 'utf8');
-      const signature = Buffer.from(signedMessage.signature).toString('base64');
+      const signature = btoa(String.fromCharCode(...signedMessage.signature));
       console.log('Message signed');
 
       // Verify signature

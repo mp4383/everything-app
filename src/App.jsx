@@ -3,8 +3,10 @@ import { ThemeProvider, CssBaseline, Box, CircularProgress } from '@mui/material
 import { WalletContextProvider } from './contexts/WalletContext';
 import { useWallet } from '@solana/wallet-adapter-react';
 import LoginPage from './pages/LoginPage';
+import CreateProfilePage from './pages/CreateProfilePage';
 import { createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import SocialFeed from './components/SocialFeed';
 import SocialPage from './pages/SocialPage';
@@ -114,6 +116,7 @@ const Home = () => (
 
 const AppContent = () => {
   const { publicKey, connecting } = useWallet();
+  const { isAuthenticated, profile, login } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleDrawerToggle = () => {
@@ -124,6 +127,13 @@ const AppContent = () => {
   useEffect(() => {
     setDrawerOpen(false);
   }, [publicKey]);
+
+  // Attempt login when wallet is connected
+  useEffect(() => {
+    if (publicKey && !isAuthenticated) {
+      login().catch(console.error);
+    }
+  }, [publicKey, isAuthenticated, login]);
 
   if (connecting) {
     return (
@@ -144,6 +154,29 @@ const AppContent = () => {
 
   if (!publicKey) {
     return <LoginPage />;
+  }
+
+  // Show loading while authenticating
+  if (publicKey && !isAuthenticated) {
+    return (
+      <Box
+        sx={{
+          height: '100vh',
+          width: '100vw',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default'
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Redirect to profile creation if no profile exists
+  if (isAuthenticated && !profile) {
+    return <CreateProfilePage />;
   }
 
   return (
@@ -174,6 +207,7 @@ const AppContent = () => {
           <Route path="/market" element={<MarketPage />} />
           <Route path="/wallet" element={<WalletDisplay />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/create-profile" element={<CreateProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Box>
@@ -187,7 +221,9 @@ const App = () => {
     <BrowserRouter>
       <ThemeProvider theme={theme}>
         <WalletContextProvider>
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </WalletContextProvider>
       </ThemeProvider>
     </BrowserRouter>

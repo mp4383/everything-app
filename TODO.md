@@ -1,6 +1,13 @@
 # TODO
 
 ## High Priority
+- [ ] Implement profile creation flow for new wallet addresses
+  - [ ] Add wallet address check against backend
+  - [ ] Redirect to profile creation if not found
+  - [ ] Redirect to dashboard after creation
+  - [ ] Add proper validation for profile fields
+  - [ ] Handle profile creation errors
+
 - [ ] Implement React Router for proper navigation
   - [ ] Set up route configuration
   - [ ] Add route guards/protection

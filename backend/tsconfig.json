@@ -1,65 +1,11 @@
 {
   "compilerOptions": {
-    /* Base Options */
-    "target": "es2022",
+    "target": "es2016",
     "module": "commonjs",
-    "lib": ["es2022"],
-    "sourceMap": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-
-    /* Module Resolution */
-    "moduleResolution": "node",
-    "baseUrl": "./src",
     "esModuleInterop": true,
-    "resolveJsonModule": true,
-
-    /* Advanced Options */
-    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": false,
-    "isolatedModules": true,
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-
-    /* Type Checking */
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "useUnknownInCatchVariables": true,
-
-    /* Additional Checks */
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false
-  },
-  "include": [
-    "src/**/*",
-    "tests/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "coverage",
-    "**/*.spec.ts",
-    "**/*.test.ts"
-  ],
-  "ts-node": {
-    "transpileOnly": true,
-    "files": true
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "dist"
   }
 }

@@ -1,261 +1,134 @@
-import { Router } from 'express';
-import { authenticate, requireProfile } from '../middleware/auth';
-import { AuthenticatedRequest, AppError } from '../types';
-import prisma from '../services/prisma';
-import { sendSuccess, sendPaginatedSuccess } from '../utils/response';
-import { validateRequest, createValidationSchema } from '../middleware/validation';
-import {
-  createPostSchema,
-  createCommentSchema,
-  postIdParamSchema,
-  postsQuerySchema,
-} from '../validation/social';
+import express from 'express';
+import { prisma } from '../services/prisma';
+import { authMiddleware } from '../middleware/auth';
+import { validateProfile } from '../middleware/validation';
 
-const router = Router();
+const router = express.Router();
 
-// Get feed posts (with filters)
-router.get('/posts', authenticate, validateRequest(createValidationSchema(
-  undefined,
-  postsQuerySchema
-)), async (req: AuthenticatedRequest, res, next) => {
+// Get all posts
+router.get('/posts', authMiddleware, async (req, res) => {
   try {
-    const page = parseInt(req.query['page'] as string) || 1;
-    const limit = Math.min(parseInt(req.query['limit'] as string) || 20, 100);
-    const offset = (page - 1) * limit;
-
-    const [posts, total] = await Promise.all([
-      prisma.post.findMany({
-        skip: offset,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          author: {
-            select: {
-              id: true,
-              nickname: true,
-              avatarUrl: true,
-              walletAddress: true,
-            },
-          },
-          tradeShare: true,
-          _count: {
-            select: {
-              commentList: true,
-              interactions: {
-                where: { type: 'like' },
-              },
-            },
-          },
+    const posts = await prisma.post.findMany({
+      include: {
+        author: {
+          include: {
+            profile: true
+          }
         },
-      }),
-      prisma.post.count(),
-    ]);
-
-    sendPaginatedSuccess(res, posts, page, limit, total);
+        comments: true,
+        likes: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    res.json(posts);
   } catch (error) {
-    next(error);
+    console.error('Get posts error:', error);
+    res.status(500).json({ error: 'Failed to get posts' });
   }
 });
 
-// Create post
-router.post('/posts', authenticate, requireProfile, validateRequest(createValidationSchema(
-  createPostSchema
-)), async (req: AuthenticatedRequest, res, next) => {
+// Create a post
+router.post('/posts', authMiddleware, async (req, res) => {
   try {
-    const { content, symbols = [], mentions = [], tradeShare } = req.body;
-    const authorId = req.user!.profileId!;
+    const { content, symbols = [], mentions = [] } = req.body;
+    const authorId = req.user?.id;
+
+    if (!authorId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
 
     const post = await prisma.post.create({
       data: {
-        authorId,
         content,
         symbols,
         mentions,
-        ...(tradeShare && {
-          tradeShare: {
-            create: {
-              ...tradeShare,
-              authorId,
-            },
-          },
-        }),
+        authorId
       },
       include: {
         author: {
-          select: {
-            id: true,
-            nickname: true,
-            avatarUrl: true,
-            walletAddress: true,
-          },
-        },
-        tradeShare: true,
-      },
-    });
-
-    sendSuccess(res, post);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Get specific post
-router.get('/posts/:id', authenticate, validateRequest(createValidationSchema(
-  undefined,
-  undefined,
-  postIdParamSchema
-)), async (req, res, next) => {
-  try {
-    const { id } = req.params as { id: string };
-    const post = await prisma.post.findUnique({
-      where: { id },
-      include: {
-        author: {
-          select: {
-            id: true,
-            nickname: true,
-            avatarUrl: true,
-            walletAddress: true,
-          },
-        },
-        tradeShare: true,
-        commentList: {
           include: {
-            author: {
-              select: {
-                id: true,
-                nickname: true,
-                avatarUrl: true,
-                walletAddress: true,
-              },
-            },
-            _count: {
-              select: {
-                interactions: {
-                  where: { type: 'like' },
-                },
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            commentList: true,
-            interactions: {
-              where: { type: 'like' },
-            },
-          },
-        },
-      },
-    });
-
-    if (!post) {
-      throw new AppError(404, 'Post not found');
-    }
-
-    sendSuccess(res, post);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Add comment
-router.post('/posts/:id/comments', authenticate, requireProfile, validateRequest(createValidationSchema(
-  createCommentSchema,
-  undefined,
-  postIdParamSchema
-)), async (req: AuthenticatedRequest, res, next) => {
-  try {
-    const { content, parentId } = req.body;
-    const authorId = req.user!.profileId!;
-    const { id: postId } = req.params as { id: string };
-
-    // Verify post exists
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-    });
-
-    if (!post) {
-      throw new AppError(404, 'Post not found');
-    }
-
-    // If this is a reply, verify parent comment exists
-    if (parentId) {
-      const parentComment = await prisma.comment.findUnique({
-        where: { id: parentId },
-      });
-
-      if (!parentComment) {
-        throw new AppError(404, 'Parent comment not found');
+            profile: true
+          }
+        }
       }
-    }
-
-    const comment = await prisma.comment.create({
-      data: {
-        postId,
-        authorId,
-        content,
-        parentId,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            nickname: true,
-            avatarUrl: true,
-            walletAddress: true,
-          },
-        },
-      },
     });
 
-    sendSuccess(res, comment);
+    res.json(post);
   } catch (error) {
-    next(error);
+    console.error('Create post error:', error);
+    res.status(500).json({ error: 'Failed to create post' });
   }
 });
 
-// Like/unlike post
-router.post('/posts/:id/like', authenticate, requireProfile, validateRequest(createValidationSchema(
-  undefined,
-  undefined,
-  postIdParamSchema
-)), async (req: AuthenticatedRequest, res, next) => {
+// Like a post
+router.post('/posts/:postId/like', authMiddleware, async (req, res) => {
   try {
-    const { id: postId } = req.params as { id: string };
-    const userId = req.user!.profileId!;
+    const { postId } = req.params;
+    const userId = req.user?.id;
 
-    // Check if interaction already exists
-    const existingLike = await prisma.interaction.findUnique({
-      where: {
-        userPostInteraction: {
-          userId,
-          postId,
-          targetType: 'post',
-        },
-      },
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const like = await prisma.like.create({
+      data: {
+        userId,
+        postId
+      }
     });
 
-    if (existingLike) {
-      // Unlike
-      await prisma.interaction.delete({
-        where: { id: existingLike.id },
-      });
-      sendSuccess(res, { liked: false });
-    } else {
-      // Like
-      await prisma.interaction.create({
-        data: {
-          type: 'like',
-          userId,
-          postId,
-          targetType: 'post',
-        },
-      });
-      sendSuccess(res, { liked: true });
-    }
+    // Update post like count
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        likeCount: {
+          increment: 1
+        }
+      }
+    });
+
+    res.json(like);
   } catch (error) {
-    next(error);
+    console.error('Like post error:', error);
+    res.status(500).json({ error: 'Failed to like post' });
+  }
+});
+
+// Unlike a post
+router.delete('/posts/:postId/like', authMiddleware, async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    await prisma.like.delete({
+      where: {
+        userId_postId: {
+          userId,
+          postId
+        }
+      }
+    });
+
+    // Update post like count
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        likeCount: {
+          decrement: 1
+        }
+      }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Unlike post error:', error);
+    res.status(500).json({ error: 'Failed to unlike post' });
   }
 });
 

@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Backend Configuration
+- Fixed backend server port to run consistently on 3001
+- Updated all frontend references to use port 3001 for API calls
+
+### Upcoming Features
+- Profile creation flow for new wallet addresses
+- Automatic redirection to profile creation for unrecognized wallets
+- Dashboard navigation after profile setup
+
+
 ### Added
 - Initial project setup with React and Material-UI
 - Basic layout with responsive grid system

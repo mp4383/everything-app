@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Container, Paper } from '@mui/material';
+import React, { useState, useMemo } from 'react';
+import { Box, TextField, Button, Typography, Container, Paper, Avatar } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const CreateProfilePage = () => {
   const { createProfile } = useAuth();
+  const navigate = useNavigate();
   const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState('');
   const [error, setError] = useState('');
@@ -19,12 +21,20 @@ const CreateProfilePage = () => {
         nickname: nickname.trim(),
         bio: bio.trim(),
       });
+      // Navigate to dashboard after successful profile creation
+      navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create profile');
     } finally {
       setLoading(false);
     }
   };
+
+  // Generate avatar URL based on nickname
+  const avatarUrl = useMemo(() => {
+    if (!nickname.trim()) return '';
+    return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(nickname.trim())}`;
+  }, [nickname]);
 
   return (
     <Container maxWidth="sm">
@@ -49,6 +59,19 @@ const CreateProfilePage = () => {
           <Typography component="h1" variant="h5" gutterBottom>
             Create Your Profile
           </Typography>
+          {nickname.trim() && (
+            <Avatar
+              src={avatarUrl}
+              alt={nickname}
+              sx={{ 
+                width: 100, 
+                height: 100, 
+                mb: 2,
+                border: 1,
+                borderColor: 'grey.300'
+              }}
+            />
+          )}
           {error && (
             <Typography color="error" sx={{ mb: 2 }}>
               {error}
