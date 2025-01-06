@@ -30,6 +30,28 @@
 
 ### Recent Changes
 
+#### Social Feed Improvements (Latest)
+- Added nicknames to social posts
+- Updated post layout:
+  - Nickname displayed prominently with avatar
+  - Avatar shows nickname initials
+  - Wallet address moved to right side with monospace font
+  - Improved visual hierarchy of post information
+
+#### Dashboard Layout Updates (Latest)
+- Removed market overview and wallet components from main dashboard view
+- Reorganized dashboard layout to focus on core features:
+  - SocialFeed (50% width)
+  - NewsFeed (25% width)
+  - Calendar (25% width)
+- Market and wallet features now accessible through dedicated pages
+
+#### TopBar Improvements (Latest)
+- Fixed NASDAQ ticker values by updating symbol format (NASDAQ-AAPL → NASDAQ:AAPL)
+- Improved ticker data handling for both crypto and stock symbols
+- Removed mock data fallback in favor of live data
+- Simplified symbol extraction logic for cleaner code
+
 #### Authentication Flow (Latest)
 - Added login page with Phantom wallet connection
 - Restricted app access to authenticated users only

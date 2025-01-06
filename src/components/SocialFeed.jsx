@@ -97,19 +97,24 @@ const Post = ({ post }) => {
         <Stack spacing={2}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Stack direction="row" spacing={2} alignItems="center">
-              <Avatar>{post.author.slice(2, 4)}</Avatar>
+              <Avatar>{post.nickname.slice(0, 2).toUpperCase()}</Avatar>
               <Box>
-                <Typography variant="subtitle2">
-                  {post.author.slice(0, 6)}...{post.author.slice(-4)}
+                <Typography variant="subtitle2" fontWeight="bold">
+                  {post.nickname}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {new Date(post.timestamp).toLocaleString()}
                 </Typography>
               </Box>
             </Stack>
-            <IconButton size="small" onClick={handleMenuOpen}>
-              <MoreVertIcon />
-            </IconButton>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                {post.author.slice(0, 6)}...{post.author.slice(-4)}
+              </Typography>
+              <IconButton size="small" onClick={handleMenuOpen}>
+                <MoreVertIcon />
+              </IconButton>
+            </Stack>
             <Menu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}

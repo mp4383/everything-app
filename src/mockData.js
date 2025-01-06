@@ -2,6 +2,7 @@ export const mockPosts = [
   {
     id: 1,
     author: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    nickname: "CryptoWhale",
     content: "Just deployed my first Solana smart contract! #blockchain #development",
     timestamp: "2024-01-10T15:30:00Z",
     likes: 12
@@ -9,6 +10,7 @@ export const mockPosts = [
   {
     id: 2,
     author: "0x123d35Cc6634C0532925a3b844Bc454e4438f123",
+    nickname: "DeFiBuilder",
     content: "Anyone interested in collaborating on a DeFi project? Looking for developers!",
     timestamp: "2024-01-10T14:20:00Z",
     likes: 8
@@ -16,6 +18,7 @@ export const mockPosts = [
   {
     id: 3,
     author: "0x456d35Cc6634C0532925a3b844Bc454e4438f456",
+    nickname: "BlockExplorer",
     content: "Great community meetup today! Thanks everyone who joined. #community",
     timestamp: "2024-01-10T12:15:00Z",
     likes: 15

@@ -9,7 +9,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 const TopBar = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const [time, setTime] = useState(new Date());
-  const symbols = ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT', 'BINANCE:SOLUSDT', 'NASDAQ-AAPL', 'NASDAQ-MSFT'];
+  const symbols = ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT', 'BINANCE:SOLUSDT', 'NASDAQ:AAPL', 'NASDAQ:MSFT'];
   const { data: liveData, isLoading } = useLiveTickers(symbols);
 
   useEffect(() => {
@@ -18,19 +18,17 @@ const TopBar = ({ onMenuClick }) => {
   }, []);
 
   const getTicker = (symbol) => {
-    const baseSymbol = symbol.split(':')[1]?.split('USDT')[0] || 
-                      symbol.split('-')[1] || 
-                      symbol;
-    const mockData = mockTickers.find(t => t.symbol === baseSymbol) || {};
+    // Extract base symbol (e.g., BTC from BINANCE:BTCUSDT or AAPL from NASDAQ:AAPL)
+    const baseSymbol = symbol.includes('USDT') 
+      ? symbol.split(':')[1].split('USDT')[0]
+      : symbol.split(':')[1];
+
     const data = liveData[symbol] || {};
     
-    // Use mock data while loading or as fallback
-    const price = isLoading ? mockData.price : (data.price?.toLocaleString() || mockData.price);
-    const change = isLoading ? mockData.change : (data.change24h ? `${data.change24h > 0 ? '+' : ''}${data.change24h.toFixed(2)}%` : mockData.change);
     return {
       symbol: baseSymbol,
-      price,
-      change
+      price: data.price?.toLocaleString() || '0.00',
+      change: data.change24h ? `${data.change24h > 0 ? '+' : ''}${data.change24h.toFixed(2)}%` : '0.00%'
     };
   };
 
