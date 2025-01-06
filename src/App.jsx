@@ -11,7 +11,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import SocialFeed from './components/SocialFeed';
 import SocialPage from './pages/SocialPage';
 import NewsFeed from './components/NewsFeed';
-import MarketOverview from './components/MarketOverview';
 import MarketPage from './pages/MarketPage';
 import WalletDisplay from './components/WalletDisplay';
 import Calendar from './components/Calendar';
@@ -51,9 +50,9 @@ const theme = createTheme({
 const Home = () => (
   <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 110px)' }}>
     {/* Left column */}
-    <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ width: '50%' }}>
       <Box sx={{ 
-        flex: 1,
+        height: '100%',
         bgcolor: 'background.paper', 
         borderRadius: '8px',
         overflow: 'auto',
@@ -62,22 +61,12 @@ const Home = () => (
       }}>
         <SocialFeed />
       </Box>
-      <Box sx={{ 
-        flex: 1,
-        bgcolor: 'background.paper', 
-        borderRadius: '8px',
-        overflow: 'auto',
-        border: 1,
-        borderColor: '#e0e0e0'
-      }}>
-        <MarketOverview />
-      </Box>
     </Box>
 
     {/* Middle column */}
-    <Box sx={{ width: '25%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ width: '25%' }}>
       <Box sx={{ 
-        flex: 7,
+        height: '100%',
         bgcolor: 'background.paper', 
         borderRadius: '8px',
         overflow: 'auto',
@@ -85,16 +74,6 @@ const Home = () => (
         borderColor: '#e0e0e0'
       }}>
         <NewsFeed />
-      </Box>
-      <Box sx={{ 
-        flex: 3,
-        bgcolor: 'background.paper', 
-        borderRadius: 'auto',
-        overflow: 'auto',
-        border: 1,
-        borderColor: '#e0e0e0'
-      }}>
-        <WalletDisplay />
       </Box>
     </Box>
 
