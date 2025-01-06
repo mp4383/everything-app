@@ -1,0 +1,58 @@
+# Development stage
+FROM node:18-alpine
+
+# Install build dependencies
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    curl \
+    # Development tools
+    vim \
+    git \
+    bash
+
+# Create app directory
+WORKDIR /app
+
+# Install global development dependencies
+RUN npm install -g \
+    nodemon \
+    typescript \
+    ts-node \
+    prisma
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install dependencies with development packages
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Expose default port
+EXPOSE 3000
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
+
+# Development specific configurations
+ENV NODE_ENV=development
+ENV DEBUG=app:*
+ENV LOG_LEVEL=debug
+
+# Add development scripts
+COPY docker/local/scripts/dev-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/dev-entrypoint.sh
+
+# Use development entrypoint
+ENTRYPOINT ["/usr/local/bin/dev-entrypoint.sh"]
+
+# Default command
+CMD ["npm", "run", "dev"]

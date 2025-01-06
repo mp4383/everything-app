@@ -4,6 +4,7 @@ import { Menu as MenuIcon } from '@mui/icons-material';
 import { mockTickers } from '../mockData';
 import { useLiveTickers } from '../hooks/useLiveTickers';
 import { useState, useEffect } from 'react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const TopBar = ({ onMenuClick }) => {
   const navigate = useNavigate();
@@ -42,8 +43,7 @@ const TopBar = ({ onMenuClick }) => {
         borderBottom: 1, 
         borderColor: 'divider',
         height: '40px',
-        backgroundColor: 'background.paper',
-        zIndex: (theme) => theme.zIndex.drawer - 1
+        backgroundColor: 'background.paper'
       }}
     >
       <Stack
@@ -102,9 +102,12 @@ const TopBar = ({ onMenuClick }) => {
             })}
           </Box>
         </Box>
-        <Typography variant="body2" sx={{ ml: 2 }}>
-          {time.toLocaleTimeString()}
-        </Typography>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <WalletMultiButton />
+          <Typography variant="body2">
+            {time.toLocaleTimeString()}
+          </Typography>
+        </Stack>
       </Stack>
     </AppBar>
   );

@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { ThemeProvider, CssBaseline, Box, Stack } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { ThemeProvider, CssBaseline, Box, CircularProgress } from '@mui/material';
+import { WalletContextProvider } from './contexts/WalletContext';
+import { useWallet } from '@solana/wallet-adapter-react';
+import LoginPage from './pages/LoginPage';
 import { createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
@@ -109,44 +112,83 @@ const Home = () => (
   </Box>
 );
 
-const App = () => {
+const AppContent = () => {
+  const { publicKey, connecting } = useWallet();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
   };
 
+  // Reset drawer state when connection changes
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [publicKey]);
+
+  if (connecting) {
+    return (
+      <Box
+        sx={{
+          height: '100vh',
+          width: '100vw',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'background.default'
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!publicKey) {
+    return <LoginPage />;
+  }
+
+  return (
+    <>
+      <CssBaseline />
+      <TopBar onMenuClick={handleDrawerToggle} />
+      <Sidebar 
+        open={drawerOpen} 
+        onClose={() => setDrawerOpen(false)}
+      />
+      <Box 
+        component="main"
+        sx={{ 
+          position: 'fixed',
+          top: '40px', // TopBar height
+          left: 0,
+          right: 0,
+          bottom: '50px', // ChatBar height
+          bgcolor: 'background.default',
+          p: 1,
+          overflow: 'auto'
+        }}
+      >
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/feed" element={<SocialPage />} />
+          <Route path="/news" element={<NewsFeed />} />
+          <Route path="/market" element={<MarketPage />} />
+          <Route path="/wallet" element={<WalletDisplay />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Box>
+      <ChatBar />
+    </>
+  );
+};
+
+const App = () => {
   return (
     <BrowserRouter>
       <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <TopBar onMenuClick={handleDrawerToggle} />
-        <Sidebar 
-          open={drawerOpen} 
-          onClose={() => setDrawerOpen(false)}
-        />
-        <Box 
-          component="main"
-          sx={{ 
-            position: 'fixed',
-            top: '40px', // TopBar height
-            left: 0,
-            right: 0,
-            bottom: '50px', // ChatBar height
-            bgcolor: 'background.default'
-          }}
-        >
-          <Routes>
-            <Route path="/" element={<Box sx={{ p: 1 }}><Home /></Box>} />
-            <Route path="/feed" element={<SocialPage />} />
-            <Route path="/news" element={<NewsFeed />} />
-            <Route path="/market" element={<MarketPage />} />
-            <Route path="/wallet" element={<WalletDisplay />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Box>
-        <ChatBar />
+        <WalletContextProvider>
+          <AppContent />
+        </WalletContextProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

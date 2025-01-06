@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="3" failures="0" errors="0" time="0.584">
+  <testsuite name="Server" errors="0" failures="0" skipped="0" timestamp="2025-01-05T23:24:14" time="0.552" tests="3">
+    <testcase classname="Server › GET /health" name="should return 200 and health status" time="0.019">
+    </testcase>
+    <testcase classname="Server › Invalid routes" name="should return 404 for non-existent routes" time="0.01">
+    </testcase>
+    <testcase classname="Server › Error handling" name="should handle JSON parsing errors" time="0.011">
+    </testcase>
+  </testsuite>
+</testsuites>
