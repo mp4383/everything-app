@@ -1,3 +1,4 @@
+import React, { useEffect, useRef } from 'react';
 import { 
   Box, 
   Typography, 
@@ -55,6 +56,17 @@ const ScheduleWidget = () => {
   } = useSchedule();
 
   const now = new Date();
+  const currentActivityRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (currentActivity && currentActivityRef.current) {
+      currentActivityRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }, [currentActivity]);
   
   return (
     <Stack sx={{ height: '100%' }}>
@@ -144,7 +156,7 @@ const ScheduleWidget = () => {
           </Card>
         )}
 
-        <Box sx={{ overflow: 'auto', flex: 1, bgcolor: '#fafafa', p: 1, mx: -2 }}>
+        <Box ref={scrollContainerRef} sx={{ overflow: 'auto', flex: 1, bgcolor: '#fafafa', p: 1, mx: -2 }}>
           <Stack spacing={0}>
             {schedule.map(([start, end, activity], index) => {
               const startTime = new Date();
@@ -162,6 +174,7 @@ const ScheduleWidget = () => {
               return (
                 <ListItem 
                   key={start}
+                  ref={isCurrent ? currentActivityRef : null}
                   sx={{
                     py: 0.5,
                     bgcolor: isCurrent ? 'action.selected' : 'transparent',

@@ -25,6 +25,16 @@ const getAuthHeaders = async (message: string, signature: string, walletAddress:
 
 // API Service
 export const api = {
+  // General
+  get: async (endpoint: string) => {
+    try {
+      const response = await axios.get(`${API_URL}${endpoint}`);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Auth
   getChallenge: async (walletAddress: string) => {
     try {
