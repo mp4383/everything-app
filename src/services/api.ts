@@ -25,6 +25,55 @@ const getAuthHeaders = async (message: string, signature: string, walletAddress:
 
 // API Service
 export const api = {
+  // Chat with Ollama
+  chatWithAI: async (message: string) => {
+    try {
+      const response = await axios.post('http://localhost:11434/api/generate', {
+        model: "mistral",
+        prompt: message,
+        stream: false
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Chat operations
+  getChats: async (headers: any) => {
+    try {
+      // For now, return empty array since we're focusing on AI chat
+      return { data: { data: [] } };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  createChat: async (data: { title: string }, headers: any) => {
+    try {
+      // Create a simple chat object since we're focusing on AI chat
+      const chat = {
+        id: Date.now().toString(),
+        userId: 'user',
+        title: data.title,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      return { data: { data: chat } };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getChatMessages: async (chatId: string, headers: any) => {
+    try {
+      // Return empty array for initial chat
+      return { data: { data: [] } };
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // General
   get: async (endpoint: string) => {
     try {

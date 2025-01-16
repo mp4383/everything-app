@@ -1,5 +1,5 @@
-import { Typography, Card, CardContent, Link, Stack, Box, CircularProgress } from '@mui/material';
-import { useState, useEffect, useCallback } from 'react';
+import { Typography, Card, CardContent, Link, Stack, Box, CircularProgress, Alert } from '@mui/material';
+import { useState, useEffect } from 'react';
 import { fetchNews } from '../services/newsService';
 
 const styles = {
@@ -34,32 +34,30 @@ const styles = {
 const NewsFeed = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const loadNews = useCallback(async () => {
-    try {
-      const newsItems = await fetchNews();
-      setNews(newsItems);
-    } catch (error) {
-      console.error('Error loading news:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadNews();
-
-    let intervalId;
-    // Only set up interval in production, not in tests
-    if (process.env.NODE_ENV !== 'test') {
-      intervalId = setInterval(loadNews, 5 * 60 * 1000);
-    }
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+    const loadNews = async () => {
+      try {
+        const newsItems = await fetchNews();
+        setNews(newsItems);
+        setError(null);
+      } catch (error) {
+        console.error('Error loading news:', error);
+        setError('Failed to load news. Please try again later.');
+      } finally {
+        setLoading(false);
       }
     };
-  }, [loadNews]);
+
+    loadNews();
+
+    // Only set up interval in production, not in tests
+    if (process.env.NODE_ENV !== 'test') {
+      const interval = setInterval(loadNews, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   return (
     <Stack spacing={2} sx={styles.root}>
@@ -74,25 +72,31 @@ const NewsFeed = () => {
           <Box sx={styles.loadingContainer}>
             <CircularProgress />
           </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+        ) : news.length === 0 ? (
+          <Alert severity="info" sx={{ m: 2 }}>No news articles available.</Alert>
         ) : (
           <Stack spacing={2}>
-            {news.map((news) => (
-              <Card key={news.id} variant="outlined">
+            {news.map((item) => (
+              <Card key={item.id} variant="outlined">
                 <CardContent>
                   <Link
-                    href={news.url}
+                    href={item.url}
                     underline="hover"
                     color="primary"
                     variant="subtitle2"
                     sx={styles.link}
+                    target="_blank"
+                    rel="noopener"
                   >
-                    {news.title}
+                    {item.title}
                   </Link>
                   <Typography variant="body2" mb={2}>
-                    {news.summary}
+                    {item.summary}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {news.source} • {new Date(news.timestamp).toLocaleString()}
+                    {item.source} • {new Date(item.timestamp).toLocaleString()}
                   </Typography>
                 </CardContent>
               </Card>

@@ -8,6 +8,7 @@ import CreateProfilePage from './pages/CreateProfilePage';
 import { createTheme } from '@mui/material/styles';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ChatProvider } from './contexts/ChatContext';
 
 import SocialFeed from './components/SocialFeed';
 import SocialPage from './pages/SocialPage';
@@ -175,7 +176,7 @@ const AppContent = () => {
           top: '40px', // TopBar height
           left: 0,
           right: 0,
-          bottom: '50px', // ChatBar height
+          bottom: isAuthenticated ? '50px' : 0, // ChatBar height when authenticated
           bgcolor: 'background.default',
           p: 1,
           overflow: 'auto'
@@ -192,7 +193,7 @@ const AppContent = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Box>
-      <ChatBar />
+      {isAuthenticated && <ChatBar />}
     </>
   );
 };
@@ -204,7 +205,9 @@ const App = () => {
         <WalletContextProvider>
           <AuthProvider>
             <ScheduleProvider>
-            <AppContent />
+              <ChatProvider>
+                <AppContent />
+              </ChatProvider>
             </ScheduleProvider>
           </AuthProvider>
         </WalletContextProvider>

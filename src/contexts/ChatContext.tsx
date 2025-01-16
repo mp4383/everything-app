@@ -116,16 +116,35 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Send message
   const sendMessage = useCallback(async (content: string) => {
-    if (!headers || !currentChat) return;
+    if (!currentChat) return;
 
     try {
       setLoading(true);
-      const response = await api.sendMessage(currentChat.id, { content }, headers);
-      if (!response.data?.data) {
-        throw new Error('Invalid response from server');
-      }
-      const { userMessage, assistantMessage } = response.data.data;
-      setMessages(prev => [...prev, userMessage, assistantMessage]);
+      // Add user message immediately
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        chatId: currentChat.id,
+        userId: 'user',
+        role: 'user',
+        content: content,
+        createdAt: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, userMessage]);
+
+      // Get AI response from Ollama
+      const response = await api.chatWithAI(content);
+      
+      // Add AI response
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        chatId: currentChat.id,
+        userId: 'assistant',
+        role: 'assistant',
+        content: response.response,
+        createdAt: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (err) {
       console.error('Failed to send message:', err);
       setError('Failed to send message');
@@ -133,7 +152,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [headers, currentChat]);
+  }, [currentChat]);
 
   return (
     <ChatContext.Provider value={{

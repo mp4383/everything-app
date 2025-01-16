@@ -4,30 +4,49 @@ import {
   Box, 
   Stack, 
   IconButton, 
-  Badge, 
   Typography, 
   Drawer,
   TextField,
-  Paper
+  Paper,
+  CircularProgress
 } from '@mui/material';
 import { 
-  Chat as ChatIcon,
   SmartToy as AIIcon,
   Close as CloseIcon,
   Send as SendIcon
 } from '@mui/icons-material';
-import { mockGroupChats, mockAiChat } from '../mockData';
+import { useChat } from '../contexts/ChatContext';
 
 const ChatBar = () => {
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState('');
+  const { messages, sendMessage, createChat, currentChat, selectChat, loading } = useChat();
+  const [messageInput, setMessageInput] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
 
-  const handleChatOpen = (chatId) => {
-    setSelectedChat(chatId);
+  const handleChatOpen = async () => {
+    if (!currentChat) {
+      const chat = await createChat('AI Assistant');
+      await selectChat(chat);
+    }
   };
 
   const handleChatClose = () => {
-    setSelectedChat(null);
+    selectChat(null);
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim()) return;
+    
+    const message = messageInput;
+    setMessageInput(''); // Clear input immediately
+    setIsThinking(true);
+    
+    try {
+      await sendMessage(message);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setIsThinking(false);
+    }
   };
 
   return (
@@ -44,69 +63,38 @@ const ChatBar = () => {
           borderColor: 'divider'
         }}
       >
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ height: '100%', px: 2 }}
-        >
-          <Stack direction="row" spacing={1} alignItems="center">
-            {mockGroupChats.map((chat) => (
-              <Box
-                key={chat.id}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  bgcolor: selectedChat === chat.id ? 'action.selected' : 'transparent',
-                  borderRadius: '4px',
-                  transition: 'background-color 0.2s'
-                }}
-              >
-                <IconButton 
-                  onClick={() => handleChatOpen(chat.id)}
-                  sx={{ 
-                    borderRadius: '4px',
-                    '&:hover': {
-                      bgcolor: 'action.hover'
-                    }
-                  }}
-                >
-                  <Badge badgeContent={chat.unread} color="error">
-                    <ChatIcon color="action" />
-                  </Badge>
-                  <Typography variant="caption" sx={{ ml: 1 }}>
-                    {chat.name}
-                  </Typography>
-                </IconButton>
-              </Box>
-            ))}
-          </Stack>
-          <Box
-            sx={{
-              bgcolor: selectedChat === 'ai' ? 'action.selected' : 'transparent',
-              borderRadius: '4px',
-              transition: 'background-color 0.2s'
-            }}
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="flex-end"
+            sx={{ height: '100%', px: 2 }}
           >
-            <IconButton 
-              color="secondary" 
-              onClick={() => handleChatOpen('ai')}
-              sx={{ 
+            <Box
+              sx={{
+                bgcolor: currentChat ? 'action.selected' : 'transparent',
                 borderRadius: '4px',
-                '&:hover': {
-                  bgcolor: 'action.hover'
-                }
+                transition: 'background-color 0.2s'
               }}
             >
-              <AIIcon />
-            </IconButton>
-          </Box>
-        </Stack>
+              <IconButton 
+                color="secondary" 
+                onClick={handleChatOpen}
+                sx={{ 
+                  borderRadius: '4px',
+                  '&:hover': {
+                    bgcolor: 'action.hover'
+                  }
+                }}
+              >
+                <AIIcon />
+              </IconButton>
+            </Box>
+          </Stack>
       </AppBar>
 
       <Drawer
         anchor="right"
-        open={selectedChat !== null}
+        open={currentChat !== null}
         onClose={handleChatClose}
         PaperProps={{
           sx: { width: '350px' }
@@ -117,12 +105,11 @@ const ChatBar = () => {
             p: 2, 
             borderBottom: 1, 
             borderColor: 'divider',
-            bgcolor: selectedChat === 'ai' ? 'secondary.main' : 'primary.main'
+            bgcolor: 'secondary.main'
           }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="subtitle1" sx={{ color: 'white' }}>
-                {selectedChat === 'ai' ? 'AI Assistant' : 
-                  mockGroupChats.find(c => c.id === selectedChat)?.name}
+                AI Assistant
               </Typography>
               <IconButton onClick={handleChatClose} size="small" sx={{ color: 'white' }}>
                 <CloseIcon />
@@ -131,33 +118,58 @@ const ChatBar = () => {
           </Box>
 
           <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
-            {selectedChat === 'ai' ? (
-              mockAiChat.map((msg) => (
-                <Box
-                  key={msg.id}
-                  sx={{
-                    display: 'flex',
-                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    mb: 2
-                  }}
-                >
-                  <Paper
-                    elevation={0}
+            {currentChat ? (
+              <>
+                {messages.map((msg) => (
+                  <Box
+                    key={msg.id}
                     sx={{
-                      p: 1.5,
-                      backgroundColor: msg.role === 'user' ? 'primary.main' : 'grey.100',
-                      color: msg.role === 'user' ? 'white' : 'text.primary',
-                      maxWidth: '80%',
-                      borderRadius: 1
+                      display: 'flex',
+                      justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      mb: 2
                     }}
                   >
-                    <Typography variant="body2">{msg.content}</Typography>
-                  </Paper>
-                </Box>
-              ))
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 1.5,
+                        backgroundColor: msg.role === 'user' ? 'primary.main' : 'grey.100',
+                        color: msg.role === 'user' ? 'white' : 'text.primary',
+                        maxWidth: '80%',
+                        borderRadius: 1
+                      }}
+                    >
+                      <Typography variant="body2">{msg.content}</Typography>
+                    </Paper>
+                  </Box>
+                ))}
+                {isThinking && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'flex-start',
+                      mb: 2
+                    }}
+                  >
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 1.5,
+                        backgroundColor: 'grey.100',
+                        borderRadius: 1,
+                        minWidth: 100,
+                        display: 'flex',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <CircularProgress size={20} color="secondary" />
+                    </Paper>
+                  </Box>
+                )}
+              </>
             ) : (
               <Typography variant="body2" color="text.secondary" align="center">
-                Group chat messages will appear here
+                Start a conversation with the AI Assistant
               </Typography>
             )}
           </Box>
@@ -168,10 +180,21 @@ const ChatBar = () => {
                 fullWidth
                 size="small"
                 placeholder="Type a message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                disabled={!currentChat || isThinking}
               />
-              <IconButton color={selectedChat === 'ai' ? 'secondary' : 'primary'}>
+              <IconButton 
+                color="secondary"
+                onClick={handleSendMessage}
+                disabled={!currentChat || !messageInput.trim() || isThinking}
+              >
                 <SendIcon />
               </IconButton>
             </Stack>

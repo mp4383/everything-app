@@ -1,8 +1,10 @@
-import { api } from './api';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:3001/api/v1';
 
 export const fetchNews = async () => {
   try {
-    const { data } = await api.get('/news');
+    const { data } = await axios.get(`${API_URL}/news`);
     return data.map(item => ({
       id: item.id,
       title: item.title,
@@ -13,6 +15,6 @@ export const fetchNews = async () => {
     }));
   } catch (error) {
     console.error('Error fetching news:', error);
-    return [];
+    throw error; // Let the component handle the error
   }
 };
