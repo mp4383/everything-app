@@ -30,7 +30,7 @@ const menuItems = [
   { path: '/news', label: 'News', icon: ArticleIcon },
   { path: '/market', label: 'Market', icon: ShowChartIcon },
   { path: '/wallet', label: 'Wallet', icon: WalletIcon },
-  { path: '/calendar', label: 'Calendar', icon: CalendarIcon },
+  { path: '/schedule', label: 'Schedule', icon: CalendarIcon },
 ];
 
 const Sidebar = ({ open, onClose }) => {

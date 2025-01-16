@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider, CssBaseline, Box, CircularProgress } from '@mui/material';
 import { WalletContextProvider } from './contexts/WalletContext';
+import { ScheduleProvider } from './contexts/ScheduleContext';
 import { useWallet } from '@solana/wallet-adapter-react';
 import LoginPage from './pages/LoginPage';
 import CreateProfilePage from './pages/CreateProfilePage';
@@ -13,7 +14,8 @@ import SocialPage from './pages/SocialPage';
 import NewsFeed from './components/NewsFeed';
 import MarketPage from './pages/MarketPage';
 import WalletDisplay from './components/WalletDisplay';
-import Calendar from './components/Calendar';
+import ScheduleWidget from './components/ScheduleWidget';
+import SchedulePage from './pages/SchedulePage';
 import TopBar from './components/TopBar';
 import ChatBar from './components/ChatBar';
 import Sidebar from './components/Sidebar';
@@ -87,7 +89,7 @@ const Home = () => (
         border: 1,
         borderColor: '#e0e0e0'
       }}>
-        <Calendar />
+          <ScheduleWidget />
       </Box>
     </Box>
   </Box>
@@ -185,7 +187,7 @@ const AppContent = () => {
           <Route path="/news" element={<NewsFeed />} />
           <Route path="/market" element={<MarketPage />} />
           <Route path="/wallet" element={<WalletDisplay />} />
-          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/schedule" element={<SchedulePage />} />
           <Route path="/create-profile" element={<CreateProfilePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -201,7 +203,9 @@ const App = () => {
       <ThemeProvider theme={theme}>
         <WalletContextProvider>
           <AuthProvider>
+            <ScheduleProvider>
             <AppContent />
+            </ScheduleProvider>
           </AuthProvider>
         </WalletContextProvider>
       </ThemeProvider>
